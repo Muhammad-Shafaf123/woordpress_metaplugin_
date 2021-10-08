@@ -9,7 +9,7 @@
   * Author URI: https://www.facebook.com
   */
 
- /* root metabox class */
+/* root metabox class */
 class MetaBoxClass{
   /* constucter call all action hooks */
   function __construct(){
@@ -27,9 +27,11 @@ class MetaBoxClass{
      ?>
      <form name="form" action="" method="POST">
      <label for="author name">Author</label>
-     <input id="meta_key" type="text" name="meta_text">
+     <input id="meta_key" type="text" name="meta_text"
+     value="<?php echo get_post_meta ($object->ID, "meta_box_key",true); ?>">
      <label class="label-show" for="show the content">Show</label>
      <input type="checkbox"  name="checked" value="true" >
+     <?php wp_nonce_field( 'nonce_action', 'nonce_field' ); ?>
      </form>
      <?php
      get_post_meta ($object->ID, "meta_box_key",true);
@@ -37,7 +39,7 @@ class MetaBoxClass{
 
   public function filter_the_content($content) {
      global $post;
-		 //retrieve the metadata values if they exist
+		 /* retrieve the metadata values if they exist */
 		 $data_field = get_post_meta($post -> ID, 'meta_key', true);
      $data_checkbox = get_post_meta($post -> ID, 'check_box_meta_key', true);
 		 if (!empty($data_field) && $data_checkbox == "true") {
@@ -49,17 +51,25 @@ class MetaBoxClass{
 
 		return $content;
   }
- /* add the field value to database */
 
+ /* add the field value to database */
   public function save_post_data($post_id) {
-     if (isset($_POST['checked'])) {
-         update_post_meta($post_id,'check_box_meta_key',$_POST['checked']);
-     }else {
-         update_post_meta($post_id,'check_box_meta_key',$_POST['checked']);
-     }
-     if ( array_key_exists( 'meta_text', $_POST ) ) {
-         update_post_meta($post_id,'meta_key',$_POST['meta_text']);
-     }
+    /* check nonce */
+    if (! isset( $_POST['nonce_field'] ) || ! wp_verify_nonce( $_POST['nonce_field'], 'nonce_action' )) {
+       wp_nonce_ays( 'Invalid user' );
+    } else {
+      if (isset($_POST['checked'])) {
+          update_post_meta($post_id,'check_box_meta_key',$_POST['checked']);
+      }else {
+          update_post_meta($post_id,'check_box_meta_key',$_POST['checked']);
+      }
+
+      if ( array_key_exists( 'meta_text', $_POST ) ) {
+          /* sanitize text field */
+          $data = sanitize_text_field($_POST['meta_text']);
+          update_post_meta($post_id,'meta_key',$data);
+      }
+    }
   }
 
 }
