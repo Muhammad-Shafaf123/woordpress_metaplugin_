@@ -9,89 +9,61 @@
   * Author URI: https://www.facebook.com
   */
 
- /* Register meta boxes. */
- function radio_button_meta_box(){
-   add_meta_box('radio-1','Hello custom radio button','display_callback','post');
- }
- add_action('add_meta_boxes','radio_button_meta_box');
- add_action( 'save_post', 'save_post_data' ,10,3);
- add_action( 'the_content', 'filter_the_content');
+ /* root metabox class */
+class MetaBoxClass{
+  /* constucter call all action hooks */
+  function __construct(){
+     add_action('add_meta_boxes',array($this,'text_field_meta_box'));
+     add_action( 'save_post', array($this,'save_post_data'));
+     add_action( 'the_content',array($this, 'filter_the_content'));
+  }
 
+  public function text_field_meta_box(){
+     add_meta_box('radio-1','Custom Message Box',array($this,'display_callback'),'post');
+  }
 
-
-
- /* function for creating html style. */
- function display_callback($object){
-   ?>
-   <form name="form" action="" method="POST">
+ /* function for creating ul design. */
+  public function display_callback($object){
+     ?>
+     <form name="form" action="" method="POST">
      <label for="author name">Author</label>
      <input id="meta_key" type="text" name="meta_text">
      <label class="label-show" for="show the content">Show</label>
-     <input type="checkbox"  name="checked" value="Bike">
-   </form>
- <?php
- get_post_meta  ($object->ID, "meta_box_key",true);
- }
+     <input type="checkbox"  name="checked" value="true" >
+     </form>
+     <?php
+     get_post_meta ($object->ID, "meta_box_key",true);
+  }
 
-
- function filter_the_content($content) {
-		global $post;
-		//retrieve the metadata values if they exist
-		$data = get_post_meta($post -> ID, 'meta_key', true);
-		if (!empty($data)) {
-			$custom_message = "<div style='background-color: #FFEBE8;border-color: #C00;padding: 2px;margin:2px;font-weight:bold;text-align:center'>";
-			$custom_message .= $data;
-			$custom_message .= "</div>";
-			$content = $custom_message . $content;
-		}
+  public function filter_the_content($content) {
+     global $post;
+		 //retrieve the metadata values if they exist
+		 $data_field = get_post_meta($post -> ID, 'meta_key', true);
+     $data_checkbox = get_post_meta($post -> ID, 'check_box_meta_key', true);
+		 if (!empty($data_field) && $data_checkbox == "true") {
+		     $custom_message = "<div style='font-weight:bold;text-align:center'>";
+			   $custom_message .= $data_field;
+			   $custom_message .= "</div>";
+			   $content = $custom_message . $content;
+		 }
 
 		return $content;
-	}
-
-
+  }
  /* add the field value to database */
- function save_post_data( $post_id, $post, $update) {
 
-   if(defined("DOING AUTOSAVE")&& DOING_AUTOSAVE)
-     return $post_id;
-
+  public function save_post_data($post_id) {
+     if (isset($_POST['checked'])) {
+         update_post_meta($post_id,'check_box_meta_key',$_POST['checked']);
+     }else {
+         update_post_meta($post_id,'check_box_meta_key',$_POST['checked']);
+     }
      if ( array_key_exists( 'meta_text', $_POST ) ) {
          update_post_meta($post_id,'meta_key',$_POST['meta_text']);
      }
-
- }
-
-
-
-
-
-
-
-
-
- if (!function_exists('write_log')) {
- 	function write_log ( $log )  {
- 		if ( true === WP_DEBUG ) {
- 			if ( is_array( $log ) || is_object( $log ) ) {
- 				error_log( print_r( $log, true ) );
- 			} else {
- 				error_log( $log );
- 			}
- 		}
- 	}
- }
- /*
-  class WP_class{
-    public function __construct(){
-      add_shortcode('tbare-plugin-demo',array($this, 'print_text'));
-
-    }
-    function print_text(){
-      $print_name = "This is add_shortcode manualy created";
-      return $print_name;
-    }
   }
 
- $textPrint = new WP_class();
- */
- ?>
+}
+
+new  MetaBoxClass;
+
+?>
